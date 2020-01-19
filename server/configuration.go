@@ -19,7 +19,7 @@ import (
 // copy appropriate for your types.
 type configuration struct {
 	disabled         bool
-	installed		 bool
+	installed        bool
 	teamCityURL      string
 	teamCityUsername string
 	teamCityPassword string

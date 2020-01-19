@@ -11,10 +11,12 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
-	"github.com/Cardfree/teamcity-sdk-go/teamcity"
+	"github.com/icelander/teamcity-sdk-go/teamcity"
 )
 
 const (
+	configTeamCityVersion = "2018.1"
+
 	commandTriggerHooks        = "teamcity"
 	commandTriggerEnable       = "enable"
 	commandTriggerDisable      = "disable"
@@ -70,6 +72,7 @@ func (p *Plugin) registerCommands() error {
 	return nil
 }
 
+// ExecuteCommand executes the slash commands
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 
 	cArgs, err := p.extractCommandArgs(args.Command)
@@ -213,7 +216,7 @@ func (p *Plugin) executeCommandTriggerInstall(args *model.CommandArgs) *model.Co
 	// Fourth argument is API version, setting is based on recommendation from here:
 	// https://www.jetbrains.com/help/teamcity/rest-api.html#RESTAPI-RESTAPIVersions
 	// TODO: Write "could not connect" test
-	client := teamcity.New(u.String(), cArgs[3], cArgs[4], "2018.1")
+	client := teamcity.New(u.String(), cArgs[3], cArgs[4], configTeamCityVersion)
 	server, err := client.Server()
 
 	if err != nil {
@@ -235,10 +238,10 @@ func (p *Plugin) executeCommandTriggerInstall(args *model.CommandArgs) *model.Co
 
 func (p *Plugin) executeCommandTriggerEnable(args *model.CommandArgs) *model.CommandResponse {
 	configuration := p.getConfiguration()
-	
+
 	if configuration.disabled {
 		configuration.disabled = false
-		p.setConfiguration(configuration)	
+		p.setConfiguration(configuration)
 	}
 
 	return p.postEphemeral(msgEnabled)
@@ -248,23 +251,84 @@ func (p *Plugin) executeCommandTriggerDisable(args *model.CommandArgs) *model.Co
 	configuration := p.getConfiguration()
 	if !configuration.disabled {
 		configuration.disabled = true
-		p.setConfiguration(configuration)	
+		p.setConfiguration(configuration)
 	}
 
 	return p.postEphemeral(msgDisabled)
 }
 
 func (p *Plugin) executeCommandTriggerListProjects(args *model.CommandArgs) *model.CommandResponse {
+	configuration := p.getConfiguration()
+	client := teamcity.New(configuration.teamCityURL,
+		configuration.teamCityUsername,
+		configuration.teamCityPassword,
+		configTeamCityVersion)
+
+	projects, err := client.GetShortProjects()
+
+	if err != nil {
+		return p.postEphemeral("Error listing projects")
+	}
+
+	if len(projects) == 0 {
+		return p.postEphemeral("No projects found")
+	}
+
+	message := "## TeamCity Projects:\n\n"
+
+	for _, project := range projects {
+		message += "### Name: [" + project.Name + "](" + project.WebURL + ") (" + project.ID + ")\n"
+	}
+
+	fmt.Print(message)
+
 	return &model.CommandResponse{
-		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-		Text:         "Running List Projects Command",
+		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,
+		Text:         message,
 	}
 }
 
 func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model.CommandResponse {
+	configuration := p.getConfiguration()
+	client := teamcity.New(configuration.teamCityURL,
+		configuration.teamCityUsername,
+		configuration.teamCityPassword,
+		configTeamCityVersion)
+
+	builds, err := client.GetBuilds()
+
+	if err != nil {
+
+		return p.postEphemeral("Error listing builds: `" + err.Error() + "`")
+
+	}
+
+	if len(builds) == 0 {
+		return p.postEphemeral("No builds found")
+	}
+
+	message := "## TeamCity Builds:\n\n"
+
+	for _, build := range builds {
+		message += " - Build : [" + build.BuildType.Name + " #" + build.Number + "](" + build.WebURL + "))\n" + 
+			"\t - Project:" + build.BuildType.ProjectName + "\n"
+			
+
+			if (build.Status == "SUCCESS") {
+				message += "\t - Status: " + build.StatusText + "\n" 
+			} else {
+				message += "\t - Status: **" + build.StatusText + "**\n" 
+			}
+			message += "\t - Build Start: " + string(build.StartDate) + "\n" + 
+			"\t - Build Finish: " + string(build.FinishDate) + "\n" + 
+			"----"
+	}
+
+	fmt.Print(message)
+
 	return &model.CommandResponse{
-		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-		Text:         "Running List Builds Command",
+		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,
+		Text:         message,
 	}
 }
 
