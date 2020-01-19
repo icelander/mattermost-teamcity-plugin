@@ -115,3 +115,15 @@ func TestPluginDisabled(t *testing.T) {
 	assert.Equal(errorDisabled, response.Text)
 }
 
+func TestListProjects(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+	
+	// Install it first
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+
+	cArgs := generateArgs("list projects")
+	response := plugin.executeCommandHooks(cArgs)
+
+	assert.Contains(response.Text, "TeamCity Projects")
+}
