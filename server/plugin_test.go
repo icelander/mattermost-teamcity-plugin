@@ -2,10 +2,13 @@ package main
 
 import (
 	"testing"
+	"fmt"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/icelander/teamcity-sdk-go/teamcity"
 )
 
 type commandArgs struct {
@@ -139,4 +142,69 @@ func TestListBuilds(t *testing.T) {
 	response := plugin.executeCommandHooks(cArgs)
 
 	assert.Contains(response.Text, "TeamCity Builds")
+}
+
+func TestWhatList(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+	
+	// Install it first
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+
+	cArgs := generateArgs("list")
+	response := plugin.executeCommandHooks(cArgs)
+
+	assert.Contains(response.Text, errorWhatList)	
+}
+
+// func TestStartBuild(t *testing.T) {
+// 	assert := assert.New(t)
+// 	plugin := Plugin{}
+
+// 	// Install it first
+// 	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+
+// 	response := plugin.executeCommandHooks(generateArgs("build start MattermostTeamcityPlugin_Build"))
+
+// 	assert.Contains(response.Text, "TEAMCITY BUILD STARTED")
+// }
+
+func TestCancelBuild(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+
+	// Start a build
+	client := teamcity.New("http://127.0.0.1:8111/",
+		"paul",
+		"mac4life",
+		configTeamCityVersion)
+
+	var emptyMap = make(map[string]string)
+
+	build, err := client.QueueBuild("MattermostTeamcityPlugin_Build", "", emptyMap)
+	// Wait for build to actually start or the cancel won't have any effect
+	time.Sleep(30 * time.Second)
+
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Error creating test build: %s", err.Error()))
+	}
+
+	buildNotes := fmt.Sprintf("Cancelling test build #%d", build.ID)
+
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	
+	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel %d \"%s\"", build.ID, buildNotes)))
+
+	assert.Contains(response.Text, "TEAMCITY BUILD CANCELLED")
+}
+
+func TestInvalidBuildID(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+
+	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel janet \"%s\"", "Not a buildID")))
+
+	assert.Contains(response.Text, "Invalid Build ID:")
 }

@@ -12,7 +12,6 @@ This plugin integrates Mattermost with JetBrains' TeamCity CI/CD appliance.
 4. Use one of the following slash commands to interact with TeamCity from within Mattermost
  	- `/teamcity project list` - List projects with description and project id
  	- `/teamcity build list` - List builds with description, project, and build id
-	- `/teamcity build status <build_id>` - Get the status of a specific build
 	- `/teamcity build start <project>` - Trigger a build on a specific project
 	- `/teamcity build cancel <build_id>` - Cancel a build
 	- `/teamcity stats` - Basic build statistics (Project Level and Build Configuration level)
@@ -24,13 +23,11 @@ This plugin integrates Mattermost with JetBrains' TeamCity CI/CD appliance.
 
 ## TODO
 
- - [ ] Implement TeamCity API
- - [ ] Read TeamCity Config from config file
+ - [x] Implement TeamCity API
+ - [x] Read TeamCity Config from config file
  - [ ] Implement slash commands
- 	- [ ] `/teamcity project list`
- 	- [ ] `/teamcity build list`
- 	- [ ] `/teamcity build status`
- 	- [ ] `/teamcity build start`
+ 	- [x] `/teamcity project list`
+ 	- [x] `/teamcity build list`
  	- [ ] `/teamcity build start`
  	- [ ] `/teamcity build cancel`
  	- [ ] `/teamcity stats`

@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -31,6 +32,8 @@ const (
 
 	errorNotInstalled = "To use the TeamCity Plugin first install it with `/teamcity install <teamcity url> <username> <password>`"
 	errorDisabled     = "TeamCity Plugin disabled. First enable it with `/teamcity enable`"
+	errorWhatList     = "Try `/teamcity list builds` or `/teamcity list projects`"
+	errorNoBuildID    = "Please provide a build ID, `/teamcity build start <build_id>`"
 
 	msgInstalled = "TeamCity Plugin Installed!"
 	msgEnabled   = "TeamCity Plugin Enabled"
@@ -38,8 +41,8 @@ const (
 
 	commandDialogHelp = "Use one of the following slash commands to interact with TeamCity from within Mattermost\n" +
 		"- `/teamcity install <teamcity url> <username> <password>` - Set up the TeamCity plugin\n" +
-		"- `/teamcity project list` - List projects with description and project id\n" +
-		"- `/teamcity build list` - List builds with description, project, and build id\n" +
+		"- `/teamcity list projects` - List projects with description and project id\n" +
+		"- `/teamcity list builds` - List builds with description, project, and build id\n" +
 		"- `/teamcity build status <build_id>` - Get the status of a specific build\n" +
 		"- `/teamcity build start <project>` - Trigger a build on a specific project\n" +
 		"- `/teamcity build cancel <build_id>` - Cancel a build\n" +
@@ -140,6 +143,9 @@ func (p *Plugin) executeCommandHooks(args *model.CommandArgs) *model.CommandResp
 		if configuration.disabled {
 			return p.postEphemeral(errorDisabled)
 		}
+		if len(cArgs) == 2 {
+			return p.postEphemeral(errorWhatList)
+		}
 		switch cArgs[2] {
 		case commandTriggerListBuilds:
 			return p.executeCommandTriggerListBuilds(args)
@@ -153,9 +159,12 @@ func (p *Plugin) executeCommandHooks(args *model.CommandArgs) *model.CommandResp
 		if configuration.disabled {
 			return p.postEphemeral(errorDisabled)
 		}
+		if len(cArgs) == 3 {
+			return p.postEphemeral(errorWhatList)
+		}
 		switch cArgs[2] {
 		case commandTriggerBuildStart:
-			return p.executeCommandTriggerBuildStart(args)
+			return p.executeCommandTriggerBuildStart(cArgs[3])
 		case commandTriggerBuildCancel:
 			return p.executeCommandTriggerBuildCancel(args)
 		default:
@@ -277,10 +286,13 @@ func (p *Plugin) executeCommandTriggerListProjects(args *model.CommandArgs) *mod
 	message := "## TeamCity Projects:\n\n"
 
 	for _, project := range projects {
+		if project.ID == "_Root" {
+			continue
+		}
 		message += "### Name: [" + project.Name + "](" + project.WebURL + ") (" + project.ID + ")\n"
 	}
 
-	fmt.Print(message)
+	// fmt.Print(message)
 
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,
@@ -298,9 +310,7 @@ func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model
 	builds, err := client.GetBuilds()
 
 	if err != nil {
-
 		return p.postEphemeral("Error listing builds: `" + err.Error() + "`")
-
 	}
 
 	if len(builds) == 0 {
@@ -310,21 +320,21 @@ func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model
 	message := "## TeamCity Builds:\n\n"
 
 	for _, build := range builds {
-		message += " - Build : [" + build.BuildType.Name + " #" + build.Number + "](" + build.WebURL + "))\n" + 
-			"\t - Project:" + build.BuildType.ProjectName + "\n"
-			
+		message += "----\n"
+		message += " - Build : [" + build.BuildTypeID + " #" + build.Number + "](" + build.WebURL + "))\n" +
+			"\t - Project: " + build.BuildType.ProjectName + "\n"
 
-			if (build.Status == "SUCCESS") {
-				message += "\t - Status: " + build.StatusText + "\n" 
-			} else {
-				message += "\t - Status: **" + build.StatusText + "**\n" 
-			}
-			message += "\t - Build Start: " + string(build.StartDate) + "\n" + 
-			"\t - Build Finish: " + string(build.FinishDate) + "\n" + 
-			"----"
+		if build.Status == "SUCCESS" {
+			message += "\t - Status: " + build.StatusText + "\n"
+		} else {
+			message += "\t - Status: **" + build.StatusText + "**\n"
+		}
+		message += "\t - Build Start: " + string(build.StartDate) + "\n" +
+			"\t - Build Finish: " + string(build.FinishDate) + "\n"
+
 	}
 
-	fmt.Print(message)
+	// fmt.Print(message)
 
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,
@@ -332,17 +342,95 @@ func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model
 	}
 }
 
-func (p *Plugin) executeCommandTriggerBuildStart(args *model.CommandArgs) *model.CommandResponse {
+func (p *Plugin) executeCommandTriggerBuildStart(buildTypeID string) *model.CommandResponse {
+	configuration := p.getConfiguration()
+	client := teamcity.New(configuration.teamCityURL,
+		configuration.teamCityUsername,
+		configuration.teamCityPassword,
+		configTeamCityVersion)
+
+	var emptyMap = make(map[string]string)
+
+	build, err := client.QueueBuild(buildTypeID, "", emptyMap)
+	// fmt.Print(build)
+
+	if err != nil {
+		return p.postEphemeral("Error starting build: `" + err.Error() + "`")
+	}
+
+	message := "**TEAMCITY BUILD STARTED**\n" +
+		" - [Build Number: %s](%s)\n" +
+		" - State: %s\n\n" +
+		" Stop this build with this slash command: `/teamcity build cancel %s %d`"
+
+	respText := fmt.Sprintf(message, build.Number, build.WebURL, build.State, buildTypeID, build.ID)
+
+	// fmt.Print(respText)
+
 	return &model.CommandResponse{
-		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-		Text:         "Running Build Start Command",
+		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,
+		Text:         respText,
 	}
 }
 
 func (p *Plugin) executeCommandTriggerBuildCancel(args *model.CommandArgs) *model.CommandResponse {
+	configuration := p.getConfiguration()
+	client := teamcity.New(configuration.teamCityURL,
+		configuration.teamCityUsername,
+		configuration.teamCityPassword,
+		configTeamCityVersion)
+
+	cArgs, err := p.extractCommandArgs(args.Command)
+
+	if err != nil {
+		return p.postEphemeral(fmt.Sprintf("Error parsing arguments: `%s`", err.Error()))
+	}
+
+	// Cancel command is like this:
+	//  - [0] : /teamcity
+	//  - [1] : build
+	//  - [2] : cancel
+	//  - [3] : buildID
+	//  - [4] : Comments
+
+	// Verify the buildID
+	buildID, err := strconv.ParseInt(cArgs[3], 10, 64)
+
+	// fmt.Print(fmt.Sprintf("Build ID is %d, provided is %s\n", buildID, cArgs[3]))
+
+	if err != nil {
+		return p.postEphemeral(fmt.Sprintf("Invalid Build ID: %s", cArgs[3]))
+	}
+
+	if buildID == 0 {
+		return p.postEphemeral(fmt.Sprintf("Error Cancelling Build: %s", err.Error()))
+	}
+
+	build, err := client.CancelBuild(buildID, cArgs[4])
+
+	if err != nil {
+		return p.postEphemeral(fmt.Sprintf("Error Cancelling Build: %s", err.Error()))
+	}
+
+	message := "**TEAMCITY BUILD CANCELLED**\n"
+
+	message += "----\n"
+	message += " - Build : [" + build.BuildTypeID + " #" + build.Number + "](" + build.WebURL + "))\n" +
+		"\t - Project: " + build.BuildType.ProjectName + "\n"
+
+	if build.Status == "SUCCESS" {
+		message += "\t - Status: " + build.StatusText + "\n"
+	} else {
+		message += "\t - Status: **" + build.StatusText + "**\n"
+	}
+	message += "\t - Build Start: " + string(build.StartDate) + "\n" +
+		"\t - Build Finish: " + string(build.FinishDate) + "\n"
+
+	// fmt.Print(message)
+
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-		Text:         "Running Build Cancel Command",
+		Text:         message,
 	}
 }
 
