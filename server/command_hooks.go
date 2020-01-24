@@ -335,6 +335,9 @@ func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model
 	message := "## TeamCity Builds:\n\n"
 
 	for _, build := range builds {
+		buildStartDate  := build.StartDate.Time().Format(fmtDateTime)
+		buildFinishDate := build.FinishDate.Time().Format(fmtDateTime)
+
 		message += "----\n"
 		message += " - Build : [" + build.BuildTypeID + " #" + build.Number + "](" + build.WebURL + "))\n" +
 			"\t - Project: " + build.BuildType.ProjectName + "\n"
@@ -344,9 +347,8 @@ func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model
 		} else {
 			message += "\t - Status: **" + build.StatusText + "**\n"
 		}
-		message += "\t - Build Start: " + string(build.StartDate) + "\n" +
-			"\t - Build Finish: " + string(build.FinishDate) + "\n"
-
+		message += "\t - Build Start: " + buildStartDate + "\n" +
+			"\t - Build Finish: " + buildFinishDate + "\n"
 	}
 
 	// fmt.Print(message)
