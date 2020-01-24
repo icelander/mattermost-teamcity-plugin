@@ -1,12 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
-	"bytes"
 
 	"github.com/pkg/errors"
 
@@ -21,7 +21,7 @@ import (
 
 const (
 	configTeamCityVersion = "2018.1"
-	fmtDateTime			  = "Jan 1, 2019 9:42pm"
+	fmtDateTime           = "Jan 1, 2019 9:42pm"
 
 	commandTriggerHooks        = "teamcity"
 	commandTriggerEnable       = "enable"
@@ -35,10 +35,10 @@ const (
 	commandTriggerBuildCancel  = "cancel"
 	commandTriggerStats        = "stats"
 
-	errorNotInstalled = "To use the TeamCity Plugin first install it with `/teamcity install <teamcity url> <username> <password>`"
-	errorDisabled     = "TeamCity Plugin disabled. First enable it with `/teamcity enable`"
-	errorWhatList     = "Try `/teamcity list builds` or `/teamcity list projects`"
-	errorNoBuildID    = "Please provide a build ID, `/teamcity build start <build_id>`"
+	errorNotInstalled   = "To use the TeamCity Plugin first install it with `/teamcity install <teamcity url> <username> <password>`"
+	errorDisabled       = "TeamCity Plugin disabled. First enable it with `/teamcity enable`"
+	errorWhatList       = "Try `/teamcity list builds` or `/teamcity list projects`"
+	errorNoBuildID      = "Please provide a build ID, `/teamcity build start <build_id>`"
 	errorNoBuildCommand = "Please provide a build command, e.g. `/teamcity build start <build_id>`"
 
 	msgInstalled = "TeamCity Plugin Installed!"
@@ -370,12 +370,12 @@ func (p *Plugin) executeCommandTriggerBuildStart(buildTypeID string) *model.Comm
 	var emptyBuildType *types.BuildType
 	buildType, err := client.GetBuildType(buildTypeID)
 
-	if (emptyBuildType == buildType) {
-		return p.postEphemeral("Invalid Build ID: `" + buildTypeID + "`")	
+	if emptyBuildType == buildType {
+		return p.postEphemeral("Invalid Build ID: `" + buildTypeID + "`")
 	}
 
 	build, err := client.QueueBuild(buildTypeID, "", emptyMap)
-	
+
 	if err != nil {
 		return p.postEphemeral("Error starting build: `" + err.Error() + "`")
 	}
@@ -475,7 +475,7 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 	agentTable := tablewriter.NewWriter(buf)
 	agentTable.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	agentTable.SetCenterSeparator("|")
-	agentTable.SetHeader([]string{"Name","Enabled","Authorized","Up to Date","Connected","Working"})
+	agentTable.SetHeader([]string{"Name", "Enabled", "Authorized", "Up to Date", "Connected", "Working"})
 	agentTable.SetAutoFormatHeaders(false)
 	agentTable.SetColumnAlignment([]int{
 		tablewriter.ALIGN_LEFT,
@@ -490,7 +490,7 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 		working := (agent.ActiveBuild.BuildTypeID == "")
 		nameLink := fmt.Sprintf("[%s](%s)", agent.Name, agent.WebURL)
 
-		agentTable.Append([]string{nameLink, 
+		agentTable.Append([]string{nameLink,
 			p.redOrGreen(agent.Enabled),
 			p.redOrGreen(agent.Authorized),
 			p.redOrGreen(agent.UpToDate),
@@ -520,16 +520,16 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 	// 	buildTable.SetHeader([]string{"Project","Build Name","Date Queued","Queue Position"})
 	// 	buildTable.SetAutoFormatHeaders(false)
 	// 	buildTable.SetHeaderAlignment(tablewriter.ALIGN_CENTER)
-		
+
 	// 	for _, build := range builds {
 	// 		nameLink := fmt.Sprintf("[%s](%s)", build.BuildTypeID, build.WebURL)
 	// 		queuedTime := build.QueuedDate.Time().Format(fmtDateTime)
 
 	// 		fmt.Print(nameLink)
 
-	// 		buildTable.Append([]string{build.BuildType.ProjectName, 
+	// 		buildTable.Append([]string{build.BuildType.ProjectName,
 	// 			nameLink,
-	// 			queuedTime, 
+	// 			queuedTime,
 	// 			string(build.QueuePosition),
 	// 		})
 	// 	}
@@ -545,7 +545,7 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 }
 
 func (p *Plugin) redOrGreen(t bool) string {
-	if (t) {
+	if t {
 		return iconGood
 	}
 
