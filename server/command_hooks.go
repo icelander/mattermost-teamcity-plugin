@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"bytes"
 
 	"github.com/pkg/errors"
 
@@ -13,10 +14,14 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/icelander/teamcity-sdk-go/teamcity"
+	"github.com/icelander/teamcity-sdk-go/types"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 const (
 	configTeamCityVersion = "2018.1"
+	fmtDateTime			  = "Jan 1, 2019 9:42pm"
 
 	commandTriggerHooks        = "teamcity"
 	commandTriggerEnable       = "enable"
@@ -34,10 +39,14 @@ const (
 	errorDisabled     = "TeamCity Plugin disabled. First enable it with `/teamcity enable`"
 	errorWhatList     = "Try `/teamcity list builds` or `/teamcity list projects`"
 	errorNoBuildID    = "Please provide a build ID, `/teamcity build start <build_id>`"
+	errorNoBuildCommand = "Please provide a build command, e.g. `/teamcity build start <build_id>`"
 
 	msgInstalled = "TeamCity Plugin Installed!"
 	msgEnabled   = "TeamCity Plugin Enabled"
 	msgDisabled  = "TeamCity Plugin Disabled"
+
+	iconGood = ":white_check_mark:"
+	iconBad  = ":x:"
 
 	commandDialogHelp = "Use one of the following slash commands to interact with TeamCity from within Mattermost\n" +
 		"- `/teamcity install <teamcity url> <username> <password>` - Set up the TeamCity plugin\n" +
@@ -160,7 +169,7 @@ func (p *Plugin) executeCommandHooks(args *model.CommandArgs) *model.CommandResp
 			return p.postEphemeral(errorDisabled)
 		}
 		if len(cArgs) == 3 {
-			return p.postEphemeral(errorWhatList)
+			return p.postEphemeral(errorNoBuildCommand)
 		}
 		switch cArgs[2] {
 		case commandTriggerBuildStart:
@@ -170,6 +179,12 @@ func (p *Plugin) executeCommandHooks(args *model.CommandArgs) *model.CommandResp
 		default:
 			return p.invalidCommand(args)
 		}
+
+	case commandTriggerStats:
+		if configuration.disabled {
+			return p.postEphemeral(errorDisabled)
+		}
+		return p.executeCommandTriggerStats(args)
 
 	default:
 		return &model.CommandResponse{
@@ -351,9 +366,16 @@ func (p *Plugin) executeCommandTriggerBuildStart(buildTypeID string) *model.Comm
 
 	var emptyMap = make(map[string]string)
 
-	build, err := client.QueueBuild(buildTypeID, "", emptyMap)
-	// fmt.Print(build)
+	// Check BuildTypeID is correct
+	var emptyBuildType *types.BuildType
+	buildType, err := client.GetBuildType(buildTypeID)
 
+	if (emptyBuildType == buildType) {
+		return p.postEphemeral("Invalid Build ID: `" + buildTypeID + "`")	
+	}
+
+	build, err := client.QueueBuild(buildTypeID, "", emptyMap)
+	
 	if err != nil {
 		return p.postEphemeral("Error starting build: `" + err.Error() + "`")
 	}
@@ -398,11 +420,11 @@ func (p *Plugin) executeCommandTriggerBuildCancel(args *model.CommandArgs) *mode
 
 	// fmt.Print(fmt.Sprintf("Build ID is %d, provided is %s\n", buildID, cArgs[3]))
 
-	if err != nil {
+	if buildID == 0 {
 		return p.postEphemeral(fmt.Sprintf("Invalid Build ID: %s", cArgs[3]))
 	}
 
-	if buildID == 0 {
+	if err != nil {
 		return p.postEphemeral(fmt.Sprintf("Error Cancelling Build: %s", err.Error()))
 	}
 
@@ -435,8 +457,97 @@ func (p *Plugin) executeCommandTriggerBuildCancel(args *model.CommandArgs) *mode
 }
 
 func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.CommandResponse {
-	return &model.CommandResponse{
-		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-		Text:         "Running Stats Command",
+	configuration := p.getConfiguration()
+	client := teamcity.New(configuration.teamCityURL,
+		configuration.teamCityUsername,
+		configuration.teamCityPassword,
+		configTeamCityVersion)
+
+	agents, err := client.GetAgentStats()
+
+	if err != nil {
+		return p.postEphemeral(fmt.Sprintf("Error getting agent stats: %s", err.Error()))
 	}
+
+	message := "**Agent Stats**\n\n"
+
+	buf := new(bytes.Buffer)
+	agentTable := tablewriter.NewWriter(buf)
+	agentTable.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+	agentTable.SetCenterSeparator("|")
+	agentTable.SetHeader([]string{"Name","Enabled","Authorized","Up to Date","Connected","Working"})
+	agentTable.SetAutoFormatHeaders(false)
+	agentTable.SetColumnAlignment([]int{
+		tablewriter.ALIGN_LEFT,
+		tablewriter.ALIGN_CENTER,
+		tablewriter.ALIGN_CENTER,
+		tablewriter.ALIGN_CENTER,
+		tablewriter.ALIGN_CENTER,
+		tablewriter.ALIGN_CENTER,
+	})
+
+	for _, agent := range agents {
+		working := (agent.ActiveBuild.BuildTypeID == "")
+		nameLink := fmt.Sprintf("[%s](%s)", agent.Name, agent.WebURL)
+
+		agentTable.Append([]string{nameLink, 
+			p.redOrGreen(agent.Enabled),
+			p.redOrGreen(agent.Authorized),
+			p.redOrGreen(agent.UpToDate),
+			p.redOrGreen(agent.Connected),
+			p.redOrGreen(working),
+		})
+	}
+
+	agentTable.Render()
+	message += buf.String()
+
+	// builds, err := client.GetBuildQueue()
+
+	// if err != nil {
+	// 	return p.postEphemeral(fmt.Sprintf("Error getting build queue: %s", err.Error()))
+	// }
+
+	// fmt.Print(builds)
+
+	// if (len(builds) != 0) {
+	// 	message += fmt.Sprintf("\n---\n**Build Queue** - Total Builds: %d\n\n", len(builds))
+
+	// 	buf2 := new(bytes.Buffer)
+	// 	buildTable := tablewriter.NewWriter(buf)
+	// 	buildTable.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+	// 	buildTable.SetCenterSeparator("|")
+	// 	buildTable.SetHeader([]string{"Project","Build Name","Date Queued","Queue Position"})
+	// 	buildTable.SetAutoFormatHeaders(false)
+	// 	buildTable.SetHeaderAlignment(tablewriter.ALIGN_CENTER)
+		
+	// 	for _, build := range builds {
+	// 		nameLink := fmt.Sprintf("[%s](%s)", build.BuildTypeID, build.WebURL)
+	// 		queuedTime := build.QueuedDate.Time().Format(fmtDateTime)
+
+	// 		fmt.Print(nameLink)
+
+	// 		buildTable.Append([]string{build.BuildType.ProjectName, 
+	// 			nameLink,
+	// 			queuedTime, 
+	// 			string(build.QueuePosition),
+	// 		})
+	// 	}
+
+	// 	buildTable.Render()
+	// 	message += buf2.String()
+	// }
+
+	return &model.CommandResponse{
+		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,
+		Text:         message,
+	}
+}
+
+func (p *Plugin) redOrGreen(t bool) string {
+	if (t) {
+		return iconGood
+	}
+
+	return iconBad
 }

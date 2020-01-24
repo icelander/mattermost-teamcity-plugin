@@ -157,18 +157,61 @@ func TestWhatList(t *testing.T) {
 	assert.Contains(response.Text, errorWhatList)	
 }
 
-// func TestStartBuild(t *testing.T) {
-// 	assert := assert.New(t)
-// 	plugin := Plugin{}
+func TestStartBuildInvalidBuildType(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
 
-// 	// Install it first
-// 	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	// Install it first
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
 
-// 	response := plugin.executeCommandHooks(generateArgs("build start MattermostTeamcityPlugin_Build"))
+	response := plugin.executeCommandHooks(generateArgs("build start janet"))
 
-// 	assert.Contains(response.Text, "TEAMCITY BUILD STARTED")
-// }
+	assert.Contains(response.Text, "Invalid Build ID")	
+}
 
+func TestInvalidBuildID(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+
+	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel janet \"%s\"", "Not a buildID")))
+
+	assert.Contains(response.Text, "Invalid Build ID:")
+}
+
+func TestGetStats(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	// Start two builds to create a BuildQueue
+	plugin.executeCommandHooks(generateArgs("build start MattermostTeamcityPlugin_TestBuild"))
+	time.Sleep(10 * time.Second)
+	plugin.executeCommandHooks(generateArgs("build start MattermostTeamcityPlugin_TestBuild"))
+	time.Sleep(10 * time.Second)	
+
+	response := plugin.executeCommandHooks(generateArgs("stats"))
+
+	fmt.Print(response.Text)
+
+	assert.Contains(response.Text, "Agent Stats")
+	// assert.Contains(response.Text, "Build Queue")
+}
+
+func TestStartBuild(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+
+	// Install it first
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+
+	response := plugin.executeCommandHooks(generateArgs("build start MattermostTeamcityPlugin_TestBuild"))
+
+	assert.Contains(response.Text, "TEAMCITY BUILD STARTED")
+}
+
+// Since this takes the longest move it to thend
 func TestCancelBuild(t *testing.T) {
 	assert := assert.New(t)
 	plugin := Plugin{}
@@ -181,9 +224,9 @@ func TestCancelBuild(t *testing.T) {
 
 	var emptyMap = make(map[string]string)
 
-	build, err := client.QueueBuild("MattermostTeamcityPlugin_Build", "", emptyMap)
+	build, err := client.QueueBuild("MattermostTeamcityPlugin_TestBuild", "", emptyMap)
 	// Wait for build to actually start or the cancel won't have any effect
-	time.Sleep(30 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Error creating test build: %s", err.Error()))
@@ -196,15 +239,4 @@ func TestCancelBuild(t *testing.T) {
 	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel %d \"%s\"", build.ID, buildNotes)))
 
 	assert.Contains(response.Text, "TEAMCITY BUILD CANCELLED")
-}
-
-func TestInvalidBuildID(t *testing.T) {
-	assert := assert.New(t)
-	plugin := Plugin{}
-
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
-
-	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel janet \"%s\"", "Not a buildID")))
-
-	assert.Contains(response.Text, "Invalid Build ID:")
 }
