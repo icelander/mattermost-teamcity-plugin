@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/icelander/teamcity-sdk-go v0.5.1
+	github.com/icelander/teamcity-sdk-go v0.5.2
 	github.com/mattermost/mattermost-server/v5 v5.18.0
 	github.com/mholt/archiver/v3 v3.3.0
 	github.com/olekukonko/tablewriter v0.0.1

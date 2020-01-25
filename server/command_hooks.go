@@ -21,7 +21,8 @@ import (
 
 const (
 	configTeamCityVersion = "2018.1"
-	fmtDateTime           = "Jan 1, 2019 9:42pm"
+	// Magic Date: Mon Jan 2 15:04:05 MST 2006
+	fmtDateTime = "Jan 2, 2006 3:04 PM MST"
 
 	commandTriggerHooks        = "teamcity"
 	commandTriggerEnable       = "enable"
@@ -335,7 +336,7 @@ func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model
 	message := "## TeamCity Builds:\n\n"
 
 	for _, build := range builds {
-		buildStartDate  := build.StartDate.Time().Format(fmtDateTime)
+		buildStartDate := build.StartDate.Time().Format(fmtDateTime)
 		buildFinishDate := build.FinishDate.Time().Format(fmtDateTime)
 
 		message += "----\n"
@@ -471,6 +472,12 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 		return p.postEphemeral(fmt.Sprintf("Error getting agent stats: %s", err.Error()))
 	}
 
+	builds, err := client.GetBuildQueue()
+
+	if err != nil {
+		return p.postEphemeral(fmt.Sprintf("Error getting build queue: %s", err.Error()))
+	}
+
 	message := "**Agent Stats**\n\n"
 
 	buf := new(bytes.Buffer)
@@ -479,6 +486,7 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 	agentTable.SetCenterSeparator("|")
 	agentTable.SetHeader([]string{"Name", "Enabled", "Authorized", "Up to Date", "Connected", "Working"})
 	agentTable.SetAutoFormatHeaders(false)
+	agentTable.SetAutoWrapText(false)
 	agentTable.SetColumnAlignment([]int{
 		tablewriter.ALIGN_LEFT,
 		tablewriter.ALIGN_CENTER,
@@ -504,41 +512,34 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 	agentTable.Render()
 	message += buf.String()
 
-	// builds, err := client.GetBuildQueue()
+	if len(builds) != 0 {
+		message += fmt.Sprintf("\n---\n**Build Queue** - Total Builds: %d\n\n", len(builds))
 
-	// if err != nil {
-	// 	return p.postEphemeral(fmt.Sprintf("Error getting build queue: %s", err.Error()))
-	// }
+		buf := new(bytes.Buffer)
+		buildTable := tablewriter.NewWriter(buf)
+		buildTable.SetAutoWrapText(false)
+		buildTable.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+		buildTable.SetCenterSeparator("|")
+		buildTable.SetHeader([]string{"Project", "Build Name", "Date Queued", "Queue Position"})
+		buildTable.SetAutoFormatHeaders(false)
+		buildTable.SetHeaderAlignment(tablewriter.ALIGN_CENTER)
 
-	// fmt.Print(builds)
+		for _, build := range builds {
+			fmt.Printf("Build Position: %d", build.QueuePosition)
+			nameLink := fmt.Sprintf("[%s](%s)", build.BuildType.Name, build.WebURL)
+			queuedTime := build.QueuedDate.Time().Format(fmtDateTime)
 
-	// if (len(builds) != 0) {
-	// 	message += fmt.Sprintf("\n---\n**Build Queue** - Total Builds: %d\n\n", len(builds))
+			buildTable.Append([]string{
+				build.BuildType.ProjectName,
+				nameLink,
+				queuedTime,
+				fmt.Sprintf("%d", build.QueuePosition),
+			})
+		}
 
-	// 	buf2 := new(bytes.Buffer)
-	// 	buildTable := tablewriter.NewWriter(buf)
-	// 	buildTable.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
-	// 	buildTable.SetCenterSeparator("|")
-	// 	buildTable.SetHeader([]string{"Project","Build Name","Date Queued","Queue Position"})
-	// 	buildTable.SetAutoFormatHeaders(false)
-	// 	buildTable.SetHeaderAlignment(tablewriter.ALIGN_CENTER)
-
-	// 	for _, build := range builds {
-	// 		nameLink := fmt.Sprintf("[%s](%s)", build.BuildTypeID, build.WebURL)
-	// 		queuedTime := build.QueuedDate.Time().Format(fmtDateTime)
-
-	// 		fmt.Print(nameLink)
-
-	// 		buildTable.Append([]string{build.BuildType.ProjectName,
-	// 			nameLink,
-	// 			queuedTime,
-	// 			string(build.QueuePosition),
-	// 		})
-	// 	}
-
-	// 	buildTable.Render()
-	// 	message += buf2.String()
-	// }
+		buildTable.Render()
+		message += buf.String()
+	}
 
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,

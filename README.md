@@ -25,13 +25,13 @@ This plugin integrates Mattermost with JetBrains' TeamCity CI/CD appliance.
 
  - [x] Implement TeamCity API
  - [x] Read TeamCity Config from config file
- - [ ] Implement slash commands
+ - [x] Implement slash commands
  	- [x] `/teamcity project list`
  	- [x] `/teamcity build list`
  	- [x] `/teamcity build start`
  	- [x] `/teamcity build cancel`
  	- [x] `/teamcity stats`
  		- [x] Agent Stats
- 		- [ ] Build Queue
+ 		- [x] Build Queue
 - [ ] Implement Webhook
 - [ ] Add Screenshots to Readme

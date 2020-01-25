@@ -193,10 +193,8 @@ func TestGetStats(t *testing.T) {
 
 	response := plugin.executeCommandHooks(generateArgs("stats"))
 
-	fmt.Print(response.Text)
-
 	assert.Contains(response.Text, "Agent Stats")
-	// assert.Contains(response.Text, "Build Queue")
+	assert.Contains(response.Text, "Build Queue")
 }
 
 func TestStartBuild(t *testing.T) {
