@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-plugin-starter-template
+module github.com/icelander/mattermost-teamcity-plugin
 
 go 1.12
 

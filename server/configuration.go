@@ -4,6 +4,9 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
+	"net/url"
+
+	"github.com/icelander/teamcity-sdk-go/teamcity"
 )
 
 // configuration captures the plugin's external configuration as exposed in the Mattermost server
@@ -19,10 +22,31 @@ import (
 // copy appropriate for your types.
 type configuration struct {
 	disabled         bool
-	installed        bool
-	teamCityURL      string
-	teamCityUsername string
-	teamCityPassword string
+	TeamCityURL      string
+	TeamCityUsername string
+	TeamCityPassword string
+}
+
+// Installed returns true if the
+func (c *configuration) Installed() bool {
+	if (c.TeamCityPassword == "" || c.TeamCityURL == "" || c.TeamCityUsername == "") {
+		return false
+	}
+
+	_, err := url.ParseRequestURI(c.TeamCityURL)
+
+	if err != nil {
+		return false
+	}
+
+	client := teamcity.New(c.TeamCityURL, c.TeamCityUsername, c.TeamCityPassword, configTeamCityVersion)
+	_, err = client.Server()
+
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if

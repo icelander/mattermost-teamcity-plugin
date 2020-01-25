@@ -138,7 +138,7 @@ func (p *Plugin) executeCommandHooks(args *model.CommandArgs) *model.CommandResp
 		}
 	}
 
-	if !configuration.installed && cArgs[1] != commandTriggerInstall {
+	if !configuration.Installed() && cArgs[1] != commandTriggerInstall {
 		return p.postEphemeral(errorNotInstalled)
 	}
 
@@ -248,10 +248,10 @@ func (p *Plugin) executeCommandTriggerInstall(args *model.CommandArgs) *model.Co
 		return p.postEphemeral("Could not connect to server.\nError: `" + err.Error() + "`")
 	}
 
-	configuration.teamCityURL = u.String()
-	configuration.teamCityUsername = cArgs[3]
-	configuration.teamCityPassword = cArgs[4]
-	configuration.installed = true
+	configuration.TeamCityURL = u.String()
+	configuration.TeamCityUsername = cArgs[3]
+	configuration.TeamCityPassword = cArgs[4]
+	
 	p.setConfiguration(configuration)
 
 	// Return an error if it fails
@@ -284,9 +284,9 @@ func (p *Plugin) executeCommandTriggerDisable(args *model.CommandArgs) *model.Co
 
 func (p *Plugin) executeCommandTriggerListProjects(args *model.CommandArgs) *model.CommandResponse {
 	configuration := p.getConfiguration()
-	client := teamcity.New(configuration.teamCityURL,
-		configuration.teamCityUsername,
-		configuration.teamCityPassword,
+	client := teamcity.New(configuration.TeamCityURL,
+		configuration.TeamCityUsername,
+		configuration.TeamCityPassword,
 		configTeamCityVersion)
 
 	projects, err := client.GetShortProjects()
@@ -318,9 +318,9 @@ func (p *Plugin) executeCommandTriggerListProjects(args *model.CommandArgs) *mod
 
 func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model.CommandResponse {
 	configuration := p.getConfiguration()
-	client := teamcity.New(configuration.teamCityURL,
-		configuration.teamCityUsername,
-		configuration.teamCityPassword,
+	client := teamcity.New(configuration.TeamCityURL,
+		configuration.TeamCityUsername,
+		configuration.TeamCityPassword,
 		configTeamCityVersion)
 
 	builds, err := client.GetBuilds()
@@ -362,9 +362,9 @@ func (p *Plugin) executeCommandTriggerListBuilds(args *model.CommandArgs) *model
 
 func (p *Plugin) executeCommandTriggerBuildStart(buildTypeID string) *model.CommandResponse {
 	configuration := p.getConfiguration()
-	client := teamcity.New(configuration.teamCityURL,
-		configuration.teamCityUsername,
-		configuration.teamCityPassword,
+	client := teamcity.New(configuration.TeamCityURL,
+		configuration.TeamCityUsername,
+		configuration.TeamCityPassword,
 		configTeamCityVersion)
 
 	var emptyMap = make(map[string]string)
@@ -400,9 +400,9 @@ func (p *Plugin) executeCommandTriggerBuildStart(buildTypeID string) *model.Comm
 
 func (p *Plugin) executeCommandTriggerBuildCancel(args *model.CommandArgs) *model.CommandResponse {
 	configuration := p.getConfiguration()
-	client := teamcity.New(configuration.teamCityURL,
-		configuration.teamCityUsername,
-		configuration.teamCityPassword,
+	client := teamcity.New(configuration.TeamCityURL,
+		configuration.TeamCityUsername,
+		configuration.TeamCityPassword,
 		configTeamCityVersion)
 
 	cArgs, err := p.extractCommandArgs(args.Command)
@@ -461,9 +461,9 @@ func (p *Plugin) executeCommandTriggerBuildCancel(args *model.CommandArgs) *mode
 
 func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.CommandResponse {
 	configuration := p.getConfiguration()
-	client := teamcity.New(configuration.teamCityURL,
-		configuration.teamCityUsername,
-		configuration.teamCityPassword,
+	client := teamcity.New(configuration.TeamCityURL,
+		configuration.TeamCityUsername,
+		configuration.TeamCityPassword,
 		configTeamCityVersion)
 
 	agents, err := client.GetAgentStats()

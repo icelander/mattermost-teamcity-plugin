@@ -15,8 +15,29 @@
         "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
-        "header": "",
-        "footer": "",
-        "settings": []
+        "header": "Header: Configure your demo plugin settings below",
+        "footer": "Footer: The code for this demo plugin can be found [here](https://github.com/mattermost/mattermost-plugin-demo)",
+        "settings": [{
+            "key": "TeamCityURL",
+            "display_name": "TeamCity URL",
+            "type": "text",
+            "help_text": "The URL of your TeamCity Server",
+            "placeholder": "http://127.0.0.1:8111/",
+            "default": ""
+        }, {
+            "key": "TeamCityUsername",
+            "display_name": "TeamCity Username",
+            "type": "text",
+            "help_text": "The username to access TeamCity with",
+            "placeholder": "demo_plugin",
+            "default": "demo_plugin"
+        }, {
+            "key": "TeamCityPassword",
+            "display_name": "TeamCity Password",
+            "type": "text",
+            "help_text": "The password to access TeamCity with",
+            "placeholder": "demo_plugin",
+            "default": "demo_plugin"
+        }]
     }
 }

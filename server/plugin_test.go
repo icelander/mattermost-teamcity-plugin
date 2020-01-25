@@ -56,10 +56,10 @@ func TestInstallPlugin(t *testing.T) {
 	
 	configuration := plugin.getConfiguration()
 
-	assert.Equal("http://127.0.0.1:8111/", configuration.teamCityURL)
-	assert.Equal("paul", configuration.teamCityUsername)
-	assert.Equal("mac4life", configuration.teamCityPassword)
-	assert.True(configuration.installed)
+	assert.Equal("http://127.0.0.1:8111/", configuration.TeamCityURL)
+	assert.Equal("paul", configuration.TeamCityUsername)
+	assert.Equal("mac4life", configuration.TeamCityPassword)
+	assert.True(configuration.Installed())
 
 	assert.Contains(response.Text, "TeamCity Installed!")
 }
@@ -110,7 +110,7 @@ func TestPluginDisabled(t *testing.T) {
 	configuration := plugin.getConfiguration()
 
 	assert.True(configuration.disabled, "configuration.disabled should be true")
-	assert.True(configuration.installed, "configuration.installed should be true")	
+	assert.True(configuration.Installed(), "configuration.Installed() should be true")	
 	
 	cArgs := generateArgs("list projects")
 	response := plugin.executeCommandHooks(cArgs)
