@@ -220,7 +220,7 @@ func TestStartBuild(t *testing.T) {
 
 	assert.Contains(response.Text, "TEAMCITY BUILD STARTED")
 
-	fmt.Print(response.Text)
+	// fmt.Print(response.Text)
 }
 
 // Since this takes the longest move it to thend

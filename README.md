@@ -28,19 +28,4 @@ This plugin integrates Mattermost with JetBrains' TeamCity CI/CD software.
 7. Select the build events to post to this webhook ![Webhook config screen](https://i.imgur.com/W9yaOm6.png)
 8. Click `Save Web Hook`
 
-## To Do
-
- - [x] Implement TeamCity API
- - [x] Read TeamCity Config from config file
- - [x] Implement slash commands
- 	- [x] `/teamcity project list`
- 	- [x] `/teamcity build list`
- 	- [x] `/teamcity build start`
- 	- [x] `/teamcity build cancel`
- 	- [x] `/teamcity stats`
- 		- [x] Agent Stats
- 		- [x] Build Queue
-- [ ] Implement Webhook
-- [ ] Add Screenshots to Readme
-
 
