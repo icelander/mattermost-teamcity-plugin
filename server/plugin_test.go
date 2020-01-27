@@ -35,10 +35,21 @@ func generateArgs(cmd string) *model.CommandArgs {
 	return cArgs
 }
 
-func TestPluginNotInstalled(t *testing.T) {
+func TestNoArguments(t *testing.T) {
 	assert := assert.New(t)
 	plugin := Plugin{}
 
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
+
+	cArgs := generateArgs("")
+	response := plugin.executeCommandHooks(cArgs)
+
+	assert.Equal(commandDialogHelp, response.Text)
+}
+
+func TestPluginNotInstalled(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
 	
 	cArgs := generateArgs("list projects")
 	response := plugin.executeCommandHooks(cArgs)
@@ -50,15 +61,14 @@ func TestInstallPlugin(t *testing.T) {
 	assert := assert.New(t)
 	plugin := Plugin{}
 
-	
-	cArgs := generateArgs("install http://127.0.0.1:8111/ paul mac4life")
+	cArgs := generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl")
 	response := plugin.executeCommandHooks(cArgs)
 	
 	configuration := plugin.getConfiguration()
 
 	assert.Equal("http://127.0.0.1:8111/", configuration.TeamCityURL)
-	assert.Equal("paul", configuration.TeamCityUsername)
-	assert.Equal("mac4life", configuration.TeamCityPassword)
+	assert.Equal("eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl", configuration.TeamCityToken)
+
 	assert.True(configuration.Installed())
 
 	assert.Contains(response.Text, "TeamCity Installed!")
@@ -69,7 +79,7 @@ func TestEnablePlugin(t *testing.T) {
 	plugin := Plugin{}
 
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 	
 	cArgs := generateArgs("enable")
@@ -86,7 +96,7 @@ func TestDisablePlugin(t *testing.T) {
 	plugin := Plugin{}
 
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 	
 	cArgs := generateArgs("disable")
 	response := plugin.executeCommandHooks(cArgs)
@@ -102,7 +112,7 @@ func TestPluginDisabled(t *testing.T) {
 	plugin := Plugin{}
 	
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 
 	// Make sure the plugin is disabled
@@ -123,7 +133,7 @@ func TestListProjects(t *testing.T) {
 	plugin := Plugin{}
 	
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 	cArgs := generateArgs("list projects")
 	response := plugin.executeCommandHooks(cArgs)
@@ -136,10 +146,12 @@ func TestListBuilds(t *testing.T) {
 	plugin := Plugin{}
 	
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 	cArgs := generateArgs("list builds")
 	response := plugin.executeCommandHooks(cArgs)
+
+	// fmt.Print(response.Text)
 
 	assert.Contains(response.Text, "TeamCity Builds")
 }
@@ -149,7 +161,7 @@ func TestWhatList(t *testing.T) {
 	plugin := Plugin{}
 	
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 	cArgs := generateArgs("list")
 	response := plugin.executeCommandHooks(cArgs)
@@ -162,7 +174,7 @@ func TestStartBuildInvalidBuildType(t *testing.T) {
 	plugin := Plugin{}
 
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 	response := plugin.executeCommandHooks(generateArgs("build start janet"))
 
@@ -173,7 +185,7 @@ func TestInvalidBuildID(t *testing.T) {
 	assert := assert.New(t)
 	plugin := Plugin{}
 
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel janet \"%s\"", "Not a buildID")))
 
@@ -184,7 +196,7 @@ func TestGetStats(t *testing.T) {
 	assert := assert.New(t)
 	plugin := Plugin{}
 
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 	// Start two builds to create a BuildQueue
 	plugin.executeCommandHooks(generateArgs("build start MattermostTeamcityPlugin_TestBuild"))
 	time.Sleep(10 * time.Second)
@@ -202,11 +214,13 @@ func TestStartBuild(t *testing.T) {
 	plugin := Plugin{}
 
 	// Install it first
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 
 	response := plugin.executeCommandHooks(generateArgs("build start MattermostTeamcityPlugin_TestBuild"))
 
 	assert.Contains(response.Text, "TEAMCITY BUILD STARTED")
+
+	fmt.Print(response.Text)
 }
 
 // Since this takes the longest move it to thend
@@ -215,10 +229,7 @@ func TestCancelBuild(t *testing.T) {
 	plugin := Plugin{}
 
 	// Start a build
-	client := teamcity.New("http://127.0.0.1:8111/",
-		"paul",
-		"mac4life",
-		configTeamCityVersion)
+	client := teamcity.New("http://127.0.0.1:8111/", "eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl")
 
 	var emptyMap = make(map[string]string)
 
@@ -232,9 +243,33 @@ func TestCancelBuild(t *testing.T) {
 
 	buildNotes := fmt.Sprintf("Cancelling test build #%d", build.ID)
 
-	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ paul mac4life"))
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
 	
 	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel %d \"%s\"", build.ID, buildNotes)))
+
+	assert.Contains(response.Text, "TEAMCITY BUILD CANCELLED")
+}
+
+func TestNoCancelBuildComments(t *testing.T) {
+	assert := assert.New(t)
+	plugin := Plugin{}
+
+	// Start a build
+	client := teamcity.New("http://127.0.0.1:8111/", "eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl")
+
+	var emptyMap = make(map[string]string)
+
+	build, err := client.QueueBuild("MattermostTeamcityPlugin_TestBuild", "", emptyMap)
+	// Wait for build to actually start or the cancel won't have any effect
+	time.Sleep(10 * time.Second)
+
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Error creating test build: %s", err.Error()))
+	}
+
+	plugin.executeCommandHooks(generateArgs("install http://127.0.0.1:8111/ eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl"))
+	
+	response := plugin.executeCommandHooks(generateArgs(fmt.Sprintf("build cancel %d", build.ID)))
 
 	assert.Contains(response.Text, "TEAMCITY BUILD CANCELLED")
 }

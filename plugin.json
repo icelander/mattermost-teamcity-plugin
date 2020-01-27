@@ -2,7 +2,7 @@
     "id": "mattermost-teamcity-plugin",
     "name": "Mattermost TeamCity Plugin",
     "description": "This plugin integrates Mattermost with TeamCity",
-    "version": "0.3.0",
+    "version": "1.0.0",
     "min_server_version": "5.18.0",
     "server": {
         "executables": {
@@ -15,29 +15,28 @@
         "bundle_path": "webapp/dist/main.js"
     },
     "settings_schema": {
-        "header": "Header: Configure your demo plugin settings below",
-        "footer": "Footer: The code for this demo plugin can be found [here](https://github.com/mattermost/mattermost-plugin-demo)",
+        "header": "**Note:** Because it uses token-based authentication this plugin supports TeamCity 2019.1 and higher",
         "settings": [{
             "key": "TeamCityURL",
             "display_name": "TeamCity URL",
             "type": "text",
             "help_text": "The URL of your TeamCity Server",
-            "placeholder": "http://127.0.0.1:8111/",
+            "placeholder": "http://teamcity:8111/",
             "default": ""
         }, {
-            "key": "TeamCityUsername",
-            "display_name": "TeamCity Username",
+            "key": "TeamCityToken",
+            "display_name": "TeamCity Access Token",
             "type": "text",
-            "help_text": "The username to access TeamCity with",
-            "placeholder": "demo_plugin",
-            "default": "demo_plugin"
+            "help_text": "The access token to use. [See documentation for more information](https://www.jetbrains.com/help/teamcity/managing-your-user-account.html#ManagingyourUserAccount-ManagingAccessTokens)",
+            "placeholder": "eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl",
+            "default": ""
         }, {
-            "key": "TeamCityPassword",
-            "display_name": "TeamCity Password",
+            "key": "TeamCityMaxBuilds",
+            "display_name": "Builds Returned",
             "type": "text",
-            "help_text": "The password to access TeamCity with",
-            "placeholder": "demo_plugin",
-            "default": "demo_plugin"
+            "help_text": "Number of builds returned when listing builds",
+            "placeholder": "5",
+            "default": "5"
         }]
     }
 }

@@ -29,9 +29,34 @@ const manifestStr = `
     "bundle_path": "webapp/dist/main.js"
   },
   "settings_schema": {
-    "header": "",
+    "header": "**Note:** Because it uses token-based authentication this plugin supports TeamCity 2019.1 and higher",
     "footer": "",
-    "settings": []
+    "settings": [
+      {
+        "key": "TeamCityURL",
+        "display_name": "TeamCity URL",
+        "type": "text",
+        "help_text": "The URL of your TeamCity Server",
+        "placeholder": "http://teamcity:8111/",
+        "default": ""
+      },
+      {
+        "key": "TeamCityToken",
+        "display_name": "TeamCity Access Token",
+        "type": "text",
+        "help_text": "The access token to use. [See documentation for more information](https://www.jetbrains.com/help/teamcity/managing-your-user-account.html#ManagingyourUserAccount-ManagingAccessTokens)",
+        "placeholder": "eyJ0eXAiOiAiVENWMiJ9.d21QeUw2akYwclFBQTVtUGlxY2xOWWV4TVNz.MDViNmM0Y2EtNzc5YS00MDU5LWE0NTgtYmVmNzg4YzhjMGVl",
+        "default": ""
+      },
+      {
+        "key": "TeamCityMaxBuilds",
+        "display_name": "Builds Returned",
+        "type": "text",
+        "help_text": "Number of builds returned when listing builds",
+        "placeholder": "5",
+        "default": "5"
+      }
+    ]
   }
 }
 `

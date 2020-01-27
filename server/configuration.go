@@ -9,27 +9,26 @@ import (
 	"github.com/icelander/teamcity-sdk-go/teamcity"
 )
 
-// configuration captures the plugin's external configuration as exposed in the Mattermost server
-// configuration, as well as values computed from the configuration. Any public fields will be
-// deserialized from the Mattermost server configuration in OnConfigurationChange.
-//
-// As plugins are inherently concurrent (hooks being called asynchronously), and the plugin
-// configuration can change at any time, access to the configuration must be synchronized. The
-// strategy used in this plugin is to guard a pointer to the configuration, and clone the entire
-// struct whenever it changes. You may replace this with whatever strategy you choose.
-//
-// If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
-// copy appropriate for your types.
+const defaultListBuildsMax = 5
+
 type configuration struct {
-	disabled         bool
-	TeamCityURL      string
-	TeamCityUsername string
-	TeamCityPassword string
+	disabled          bool
+	TeamCityURL       string
+	TeamCityToken     string
+	TeamCityMaxBuilds int
 }
 
-// Installed returns true if the
+func (c *configuration) GetMaxBuilds() int {
+	if c.TeamCityMaxBuilds == 0 {
+		c.TeamCityMaxBuilds = defaultListBuildsMax
+	}
+
+	return c.TeamCityMaxBuilds
+}
+
+// Installed returns true if the plugin is configured and can connect to the server
 func (c *configuration) Installed() bool {
-	if (c.TeamCityPassword == "" || c.TeamCityURL == "" || c.TeamCityUsername == "") {
+	if c.TeamCityToken == "" || c.TeamCityURL == "" {
 		return false
 	}
 
@@ -39,7 +38,7 @@ func (c *configuration) Installed() bool {
 		return false
 	}
 
-	client := teamcity.New(c.TeamCityURL, c.TeamCityUsername, c.TeamCityPassword, configTeamCityVersion)
+	client := teamcity.New(c.TeamCityURL, c.TeamCityToken)
 	_, err = client.Server()
 
 	if err != nil {
