@@ -297,7 +297,7 @@ func (p *Plugin) executeCommandTriggerListProjects(args *model.CommandArgs) *mod
 		if project.ID == "_Root" {
 			continue
 		}
-		message += fmt.Sprintf(" - [%s (ID: %s)](%s)", project.Name, project.WebURL, project.ID)
+		message += fmt.Sprintf(" - [%s (ID: %s)](%s)", project.Name, project.ID, project.WebURL)
 	}
 
 	return &model.CommandResponse{
@@ -452,13 +452,11 @@ func (p *Plugin) executeCommandTriggerBuildCancel(args *model.CommandArgs) *mode
 	}
 
 	buildStartDate := build.StartDate.Time().Format(fmtDateTime)
-	buildFinishDate := build.FinishDate.Time().Format(fmtDateTime)
 
-	message += "\t - Build Start: " + buildStartDate + "\n" +
-		"\t - Build Finish: " + buildFinishDate + "\n"
+	message += "\t - Build Start: " + buildStartDate + "\n"
 
 	return &model.CommandResponse{
-		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+		ResponseType: model.COMMAND_RESPONSE_TYPE_IN_CHANNEL,
 		Text:         message,
 	}
 }
@@ -499,7 +497,7 @@ func (p *Plugin) executeCommandTriggerStats(args *model.CommandArgs) *model.Comm
 	})
 
 	for _, agent := range agents {
-		working := (agent.ActiveBuild.BuildTypeID == "")
+		working := (agent.ActiveBuild.BuildTypeID != "")
 		nameLink := fmt.Sprintf("[%s](%s)", agent.Name, agent.WebURL)
 
 		agentTable.Append([]string{nameLink,

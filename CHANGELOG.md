@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 1.0.1
+### Added
+ - 
+
+### Changed
+ - Removed Finished Date from build cancel. (Since it will always be 0)
+ - `build cancel` is now a regular post
+
+### Fixed
+ - Fixed display of `list projects`
+ - Fixed display of working status in `list builds`
+
 ## 1.0.0 - 2020-01-27
 ### Added
  - System Console settings page for plugin

@@ -5,7 +5,7 @@ const manifest = JSON.parse(`
     "id": "mattermost-teamcity-plugin",
     "name": "Mattermost TeamCity Plugin",
     "description": "This plugin integrates Mattermost with TeamCity",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "min_server_version": "5.18.0",
     "server": {
         "executables": {
